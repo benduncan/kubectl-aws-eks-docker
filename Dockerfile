@@ -12,7 +12,7 @@ RUN apt-get update \
   && curl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/aws-iam-authenticator -o /usr/local/bin/aws-iam-authenticator \
   && chmod 755 /usr/local/bin/aws-iam-authenticator \
   && apt-get clean \
-  && pip install awscli
+  && pip install awscli \
+  && rm -rf /var/lib/apt/lists/*
 
-
-ENTRYPOINT ["/bin/bash", "-c", "aws eks --region ${AWS_DEFAULT_REGION} update-kubeconfig --name $EKS_CLUSTER_NAME && aws sts get-caller-identity && kubectl patch deployment/$K8_DEPLOYMENT -p '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"lastupdated\":\"'$K8_UPDATEDATE'\"}}}}}'"]
+ENTRYPOINT ["/bin/bash", "-c", "aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME && aws sts get-caller-identity && kubectl patch deployment/$K8_DEPLOYMENT -p '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"lastupdated\":\"'$K8_UPDATEDATE'\"}}}}}'"]

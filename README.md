@@ -57,9 +57,23 @@ Using the (Method A) approach, the running Kubernetes deployment is updated usin
 
 ## Bitbucket configuration
 
-In the Bitbucket repository > Deployments > Settings, define each of the ENV fields above (AWS_ACCESS_KEY_ID, etc) - Make sure the AWS_SECRET_ACCESS_KEY is defined and check the _lock_ option checked, so the secret is stored encrypted.
+In the Bitbucket repository > Deployments > Settings, define each of the ENV fields above (AWS*ACCESS_KEY_ID, etc) - Make sure the AWS_SECRET_ACCESS_KEY is defined and check the \_lock* option checked, so the secret is stored encrypted.
 
 Depending on your bitbucket pipeline setup, you may have different builds for staging, development and production. If so, Bitbucket supports unique ENV fields depending on the deployment. If building for multiple deployments you can define the K8_DEPLOYMENT with a unique Kubernetes deployment (e.g app-staging, app-production, app-dev)
+
+A sample bitbucket-pipeline config file is below. Append an additional step post the image/ECR build.
+
+```
+- step:
+    image: calacode/kubectl-aws-eks-docker:latest
+    script:
+      - export K8_UPDATEDATE=`date +'%s'`
+      - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+      - aws sts get-caller-identity
+      - kubectl patch deployment/$K8_DEPLOYMENT -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"lastupdated\":\"$K8_UPDATEDATE\"}}}}}"
+```
+
+Volia! Once the step completes the Kubernetes deployment (\$K8_DEPLOYMENT) will be forced to update, pulling the latest image and re-launching the desired pods.
 
 ## Troubleshooting
 
@@ -72,9 +86,3 @@ image: XXX.dkr.ecr.ap-southeast-2.amazonaws.com/XXX:staging
 imagePullPolicy: Always
 ...
 ```
-
-Method A
-
-Method B
-
-kubectl set image deployment/$K8_DEPLOYMENT $K8_CONTAINERNAME=\$AWS_REGISTRY_URL:staging
